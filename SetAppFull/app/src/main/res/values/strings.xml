@@ -11,6 +11,10 @@
     <string name="module_active">Active</string>
     <string name="module_inactive">*Inactive</string>
     <string name="show_launcher_icon">Show launcher icon</string>
+    <string name="language_text">Language</string>
+    <string name="language_system">Follow system</string>
+    <string name="language_english">English</string>
+    <string name="language_chinese">简体中文</string>
     <string name="clear_all">Clear all selections</string>
     <string name="clear_all_title">Clear all selections</string>
     <string name="clear_all_message">Remove all selected apps in %1$s? This cannot be undone.</string>

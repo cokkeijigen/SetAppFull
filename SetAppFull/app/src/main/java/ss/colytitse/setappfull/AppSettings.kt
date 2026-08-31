@@ -1,15 +1,20 @@
 package ss.colytitse.setappfull
 
+import android.app.LocaleManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.content.res.Configuration
+import android.os.Build
+import android.os.LocaleList
 import android.util.Xml
 import io.github.libxposed.service.XposedService
 import androidx.core.content.edit
 import org.xmlpull.v1.XmlPullParser
 import java.io.InputStream
 import java.io.OutputStream
+import java.util.Locale
 
 /**
  * Configuration store. Values are kept in libxposed Remote Preferences (group "config") so the
@@ -33,6 +38,7 @@ object AppSettings {
     private const val KEY_SWITCH_LIST = "onSwitchListView"
     private const val KEY_HELLO_WORLD = "hello_world"
     private const val KEY_SHOW_ICON = "show_launcher_icon"
+    private const val KEY_LANGUAGE = "app_language"
     private const val LAUNCHER_ALIAS = "ss.colytitse.setappfull.MainActivityLauncher"
 
     /** The active preferences: remote (LSPosed) when available, otherwise local. */
@@ -143,6 +149,56 @@ object AppSettings {
             state,
             PackageManager.DONT_KILL_APP,
         )
+    }
+
+    // ---------------------------------------------------------------------------------- language
+
+    fun getLanguage(context: Context): String =
+        context.getSharedPreferences(CONFIG_NAME, Context.MODE_PRIVATE)
+            .getString(KEY_LANGUAGE, AppLanguages.SYSTEM_CODE) ?: AppLanguages.SYSTEM_CODE
+
+    fun setLanguage(context: Context, code: String) {
+        context.getSharedPreferences(CONFIG_NAME, Context.MODE_PRIVATE)
+            .edit { putString(KEY_LANGUAGE, code) }
+        // API 33+ 通过 LocaleManager 生效，配合 configChanges 声明 Activity 不重建；
+        // API 33 以下同样不 recreate，统一由 Compose 层 localizedContext 即时驱动，
+        // 避免重建闪烁，让 AnimatedContent 过渡动画得以完整播放。
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            applyLanguage(context)
+        }
+    }
+
+    /** 应用启动时调用，确保语言设置生效（API 33+ 通过 LocaleManager）。 */
+    fun applyLanguage(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val manager = context.getSystemService(LocaleManager::class.java)
+            manager.applicationLocales = if (getLanguage(context) == AppLanguages.SYSTEM_CODE) {
+                LocaleList.getEmptyLocaleList()
+            } else {
+                LocaleList.forLanguageTags(getLanguage(context))
+            }
+        }
+    }
+
+    /** 根据指定语言 code 创建带对应 locale 的 context（Compose 层即时切换语言用）。 */
+    fun localizedContext(base: Context, code: String): Context {
+        // 「跟随系统」也创建明确的系统 locale context，而不是直接返回 base：
+        // API 33+ 下 base.resources 反映 applicationLocales，切回「跟随系统」时其更新是异步的，
+        // 直接返回 base 会让界面停留在上一语言甚至不刷新。
+        val locale = if (code == AppLanguages.SYSTEM_CODE) {
+            AppLanguages.systemLocale(base)
+        } else {
+            Locale.forLanguageTag(code)
+        }
+        val config = Configuration(base.resources.configuration)
+        config.setLocales(LocaleList(locale))
+        return base.createConfigurationContext(config)
+    }
+
+    /** API 33 以下：在 attachBaseContext 里用此方法覆盖 locale。 */
+    fun wrapLocale(base: Context): Context {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) return base
+        return localizedContext(base, getLanguage(base))
     }
 
     // ---------------------------------------------------------------------------------- export / import

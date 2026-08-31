@@ -20,6 +20,7 @@
 
         <activity
             android:name=".MainActivity"
+            android:configChanges="locale|layoutDirection"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -40,6 +41,7 @@
 
         <activity
             android:name=".SettingsActivity"
+            android:configChanges="locale|layoutDirection"
             android:exported="true" />
     </application>
 

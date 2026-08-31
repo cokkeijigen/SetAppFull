@@ -1,6 +1,7 @@
 package ss.colytitse.setappfull
 
 import android.app.Application
+import android.content.Context
 import io.github.libxposed.service.XposedService
 import io.github.libxposed.service.XposedServiceHelper
 import java.util.concurrent.CopyOnWriteArraySet
@@ -38,10 +39,15 @@ class App : Application(), XposedServiceHelper.OnServiceListener {
         }
     }
 
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(AppSettings.wrapLocale(base))
+    }
+
     override fun onCreate() {
         super.onCreate()
         XposedServiceHelper.registerListener(this)
         AppSettings.applyLauncherIcon(this)
+        AppSettings.applyLanguage(this)
     }
 
     override fun onServiceBind(service: XposedService) {

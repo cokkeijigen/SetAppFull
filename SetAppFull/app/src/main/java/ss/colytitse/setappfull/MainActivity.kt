@@ -1,5 +1,6 @@
 package ss.colytitse.setappfull
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -7,6 +8,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -72,6 +79,25 @@ import ss.colytitse.setappfull.ui.SetAppFullTheme
 class MainActivity : ComponentActivity() {
 
     private lateinit var appInfoManager: AppInfoManager
+    private var lastLanguageKey: String? = null
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppSettings.wrapLocale(newBase))
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // API 33 以下：设置页切换语言后自身不 recreate，返回主界面时若检测到语言变化则重建一次，
+        // 让主界面也套用新语言（API 33+ 由 LocaleManager 自动更新，无需处理）。
+        // 按「实际显示语言」比较，避免「跟随系统 → 同语言显式选项」这类无实际变化的切换触发重建闪烁。
+        val currentKey = AppLanguages.effectiveLanguageKey(AppSettings.getLanguage(this), this)
+        if (lastLanguageKey != null && lastLanguageKey != currentKey) {
+            lastLanguageKey = currentKey
+            recreate()
+            return
+        }
+        lastLanguageKey = currentKey
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -292,7 +318,11 @@ private fun MainScreen(activity: MainActivity, appInfoManager: AppInfoManager) {
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            if (searchVisible) {
+            AnimatedVisibility(
+                visible = searchVisible,
+                enter = expandVertically(tween(durationMillis = 220)) + fadeIn(tween(durationMillis = 220)),
+                exit = shrinkVertically(tween(durationMillis = 200)) + fadeOut(tween(durationMillis = 180)),
+            ) {
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },

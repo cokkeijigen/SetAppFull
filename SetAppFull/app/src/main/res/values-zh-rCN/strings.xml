@@ -11,6 +11,10 @@
     <string name="module_active">已激活</string>
     <string name="module_inactive">*未激活</string>
     <string name="show_launcher_icon">显示桌面图标</string>
+    <string name="language_text">选择语言</string>
+    <string name="language_system">跟随系统</string>
+    <string name="language_english">English</string>
+    <string name="language_chinese">简体中文</string>
     <string name="clear_all">取消全部勾选</string>
     <string name="clear_all_title">取消全部勾选</string>
     <string name="clear_all_message">确定要取消「%1$s」中所有应用的勾选吗？此操作不可撤销。</string>
