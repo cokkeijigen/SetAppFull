@@ -1,41 +1,39 @@
 <resources>
     <string name="app_name">SetAppFull</string>
     <string name="xposeddescription">Set app to full screen run _(:з」∠)_.</string>
-    <string name="this_version">Version：-> ver.11.45.14</string>
     <string name="list_system">SystemApp</string>
+    <string name="list_user">UserApp</string>
     <string name="mode_1">Mode 1</string>
     <string name="mode_2">Mode 2</string>
-    <string name="list_user">UserApp</string>
     <string name="search_text">Search…</string>
     <string name="settings_text">Settings</string>
+    <string name="hello_title">Hello!</string>
+    <string name="module_active">Active</string>
+    <string name="module_inactive">*Inactive</string>
+    <string name="show_launcher_icon">Show launcher icon</string>
+    <string name="clear_all">Clear all selections</string>
+    <string name="clear_all_title">Clear all selections</string>
+    <string name="clear_all_message">Remove all selected apps in %1$s? This cannot be undone.</string>
+    <string name="confirm_text">OK</string>
+    <string name="cancel_text">Cancel</string>
     <string name="scope_mode_text">Scope Mode</string>
-    <string name="scope_mode_description">
-        When this mode is enabled, you can directly select the target application within an Xposed manager that supports scoping to use Mode 1.
-    </string>
-    <string name="mode_explain_1" >
-        This mode works by hooking the target application\'s implementation.
-    </string>
-    <string name="mode_explain_2">
-        This mode works by hooking the implementation of Android\'s display policy class, and it requires a reboot to take effect.
-    </string>
-    <string name="hello_world">
-        If this is your first time using it, please read these instructions carefully.
-        This module modifies the system framework and could lead to issues like being unable to boot into the system.
-        Please be prepared for recovery before use.
-    </string>
+    <string name="scope_mode_description">When this mode is enabled, you can directly select the target application within an Xposed manager that supports scoping to use Mode 1.</string>
+    <string name="mode_explain_1">This mode works by hooking the target application\'s implementation.</string>
+    <string name="mode_explain_2">This mode works by hooking the implementation of Android\'s display policy class, and it requires a reboot to take effect.</string>
+    <string name="hello_world">If this is your first time using it, please read these instructions carefully. This module modifies the system framework and could lead to issues like being unable to boot into the system. Please be prepared for recovery before use.</string>
     <string name="hello_world_1">You can return directly now, and next time you launch, it won\'t jump to this screen first.</string>
     <string name="hello">Welcome to this Xposed module!</string>
-    <string name="description_text">
-        This Xposed module allows you to force applications into fullscreen mode.
-        However, this is not a universal solution, meaning it may not be compatible with all apps or games.
-        If you experience the module not working, abnormal display, or require specific adaptations,
-        you\'ll need to contact the developers of the app or game directly.
-        Reporting these issues to me will not lead to a resolution.
-    </string>
+    <string name="description_text">This Xposed module allows you to force applications into fullscreen mode. However, this is not a universal solution, meaning it may not be compatible with all apps or games. If you experience the module not working, abnormal display, or require specific adaptations, you\'ll need to contact the developers of the app or game directly. Reporting these issues to me will not lead to a resolution.</string>
     <string name="description_title">Description</string>
     <string name="about_text">About</string>
-    <string name="github_cokkeijigen" translatable="false">-| By cokkeijigen - GitHub |-</string>
-    <string-array name="xposedscope">
-        <item>android</item>
-    </string-array>
+    <string name="export_config">Export config</string>
+    <string name="import_config">Import config</string>
+    <string name="import_dialog_title">Import config</string>
+    <string name="import_dialog_message">Choose how to import. Merge keeps your current settings and overwrites matching entries; Overwrite clears everything first and then imports.</string>
+    <string name="import_merge">Merge</string>
+    <string name="import_overwrite">Overwrite</string>
+    <string name="export_success">Config exported.</string>
+    <string name="export_failed">Export failed.</string>
+    <string name="import_success">Config imported.</string>
+    <string name="import_failed">Import failed.</string>
 </resources>

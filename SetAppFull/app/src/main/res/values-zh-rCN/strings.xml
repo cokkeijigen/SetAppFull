@@ -1,30 +1,39 @@
 <resources>
     <string name="app_name">设置应用全屏</string>
     <string name="xposeddescription">将应用突破次元壁，覆盖异形屏幕限制全面显示_(:з」∠)_</string>
-    <string name="this_version">当前版本：-> ver.11.45.14</string>
     <string name="list_system">系统应用</string>
     <string name="list_user">用户应用</string>
-    <string name="search_text">搜索…</string>
-    <string name="settings_text">设置</string>
     <string name="mode_1">模式 1</string>
     <string name="mode_2">模式 2</string>
-    <string name="mode_explain_1">该模式工作方式为Hook目标应用实现。</string>
-    <string name="mode_explain_2">该模式工作方式是Hook安卓系统的显示策略类实现，需要重启后生效。</string>
-    <string name="hello_world">
-        如果您是第一次使用，请仔细阅读以下说明。
-        本模块会对系统框架进行修改，可能会导致无法开机等问题。
-        请在使用前请做好救砖的准备。
-    </string>
-    <string name="hello_world_1">已了解可以直接返回，下次启动则不会先跳转到此界面。</string>
-    <string name="hello" >欢迎使用本Xposed模块！</string>
+    <string name="search_text">搜索…</string>
+    <string name="settings_text">设置</string>
+    <string name="hello_title">你好！</string>
+    <string name="module_active">已激活</string>
+    <string name="module_inactive">*未激活</string>
+    <string name="show_launcher_icon">显示桌面图标</string>
+    <string name="clear_all">取消全部勾选</string>
+    <string name="clear_all_title">取消全部勾选</string>
+    <string name="clear_all_message">确定要取消「%1$s」中所有应用的勾选吗？此操作不可撤销。</string>
+    <string name="confirm_text">确定</string>
+    <string name="cancel_text">取消</string>
     <string name="scope_mode_text">作用域模式</string>
-    <string name="scope_mode_description">该模式启用后，可以直接在带有作用域的Xposed管理器中直接勾选目标应用。</string>
+    <string name="scope_mode_description">该模式启用后，可以直接在带有作用域的 Xposed 管理器中直接勾选目标应用。</string>
+    <string name="mode_explain_1">该模式工作方式为 Hook 目标应用实现。</string>
+    <string name="mode_explain_2">该模式工作方式是 Hook 安卓系统的显示策略类实现，需要重启后生效。</string>
+    <string name="hello_world">如果您是第一次使用，请仔细阅读以下说明。\n本模块会对系统框架进行修改，可能会导致无法开机等问题。\n请在使用前做好救砖的准备。</string>
+    <string name="hello_world_1">已了解可以直接返回，下次启动则不会先跳转到此界面。</string>
+    <string name="hello">欢迎使用本 Xposed 模块！</string>
+    <string name="description_text">这是用于修改应用能够强制全屏显示的 Xposed 模块。\n此模块的解决方案不是万能的，也就是说本模块不一定适用于全部应用或者游戏，\n如遇到不生效或者显示异常或者需适配请自行联系应用或者游戏的开发商。\n向我提交问题并没任何卵用。</string>
     <string name="description_title">说明</string>
-    <string name="description_text">
-        这是用于修改应用能够强制全屏显示的Xposed模块。
-        此模块的解决方案不是万能的，也就是说本模块不一定适用于全部应用或者游戏，
-        如遇到不生效或者显示异常或者需适配请自行联系应用或者游戏的开发商，
-        向我提交问题并没任何卵用。
-    </string>
     <string name="about_text">关于</string>
+    <string name="export_config">导出配置</string>
+    <string name="import_config">导入配置</string>
+    <string name="import_dialog_title">导入配置</string>
+    <string name="import_dialog_message">请选择导入方式：「合并导入」保留现有配置并覆盖同名项；「覆盖导入」会先清空全部再导入。</string>
+    <string name="import_merge">合并导入</string>
+    <string name="import_overwrite">覆盖导入</string>
+    <string name="export_success">配置已导出</string>
+    <string name="export_failed">导出失败</string>
+    <string name="import_success">配置已导入</string>
+    <string name="import_failed">导入失败</string>
 </resources>

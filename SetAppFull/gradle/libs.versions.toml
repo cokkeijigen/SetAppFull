@@ -1,18 +1,28 @@
 [versions]
-agp = "8.10.0"
+agp = "9.3.0"
+kotlin = "2.4.10"
+libxposedVersion = "102.0.0"
+composeBom = "2026.08.00"
+activityCompose = "1.13.0"
 junit = "4.13.2"
-junitVersion = "1.2.1"
-espressoCore = "3.6.1"
-material = "1.10.0"
-swiperefreshlayout = "1.1.0"
-xposedversion = "82"
+junitVersion = "1.3.0"
+espressoCore = "3.7.0"
+
 [libraries]
-de-robv-android-xposed-api = { module = "de.robv.android.xposed:api", version.ref = "xposedversion" }
+libxposed = { module = "io.github.libxposed:api", version.ref = "libxposedVersion" }
+libxposed-service = { module = "io.github.libxposed:service", version.ref = "libxposedVersion" }
+compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+compose-ui = { module = "androidx.compose.ui:ui" }
+compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
+compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+compose-material3 = { module = "androidx.compose.material3:material3" }
+compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
+activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
-swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "swiperefreshlayout" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
