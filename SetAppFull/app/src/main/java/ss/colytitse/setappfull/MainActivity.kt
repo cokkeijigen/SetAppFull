@@ -2,6 +2,7 @@ package ss.colytitse.setappfull
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -87,11 +88,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        // API 33 以下：设置页切换语言后自身不 recreate，返回主界面时若检测到语言变化则重建一次，
-        // 让主界面也套用新语言（API 33+ 由 LocaleManager 自动更新，无需处理）。
-        // 按「实际显示语言」比较，避免「跟随系统 → 同语言显式选项」这类无实际变化的切换触发重建闪烁。
+        // 按「实际显示语言」归一化比较，避免「跟随系统 → 同语言显式选项」这类无实际变化的切换触发重建闪烁。
         val currentKey = AppLanguages.effectiveLanguageKey(AppSettings.getLanguage(this), this)
-        if (lastLanguageKey != null && lastLanguageKey != currentKey) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // API 33+ 由 LocaleManager 驱动，返回时同步一次 applicationLocales（幂等）。
+            AppSettings.applyLanguage(this)
+        } else if (lastLanguageKey != null && lastLanguageKey != currentKey) {
+            // API 33 以下：返回时语言有变则重建一次主界面。
             lastLanguageKey = currentKey
             recreate()
             return
@@ -161,7 +164,7 @@ private fun MainScreen(activity: MainActivity, appInfoManager: AppInfoManager) {
         listRevision++
     }
 
-    // Re-read configuration when the libxposed service (remote preferences) becomes available.
+    // 服务（远程配置）可用时重新读取配置。
     DisposableEffect(Unit) {
         val listener = object : App.ServiceStateListener {
             override fun onServiceStateChanged(service: XposedService?) {

@@ -160,12 +160,8 @@ object AppSettings {
     fun setLanguage(context: Context, code: String) {
         context.getSharedPreferences(CONFIG_NAME, Context.MODE_PRIVATE)
             .edit { putString(KEY_LANGUAGE, code) }
-        // API 33+ 通过 LocaleManager 生效，配合 configChanges 声明 Activity 不重建；
-        // API 33 以下同样不 recreate，统一由 Compose 层 localizedContext 即时驱动，
-        // 避免重建闪烁，让 AnimatedContent 过渡动画得以完整播放。
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            applyLanguage(context)
-        }
+        // 不在这里同步 applicationLocales（会触发配置变更导致闪屏），
+        // 由 App.onCreate 与 MainActivity.onResume 统一同步。
     }
 
     /** 应用启动时调用，确保语言设置生效（API 33+ 通过 LocaleManager）。 */

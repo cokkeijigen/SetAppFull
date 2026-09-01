@@ -191,7 +191,7 @@ private fun SettingsScreen(context: Context) {
         }
     }
 
-    // Replicate the original first-run behaviour: append the extra hint and enable scope mode.
+    // 首次启动：额外显示提示并开启作用域模式。
     LaunchedEffect(Unit) {
         if (showFirstRunHint) {
             AppSettings.setHelloWorld(context)
@@ -200,11 +200,18 @@ private fun SettingsScreen(context: Context) {
         }
     }
 
+    // 切换时不在这里同步 applicationLocales（会触发配置变更导致闪屏）；
+    // 文案由 localizedContext 驱动，applicationLocales 由 App.onCreate / MainActivity.onResume 同步。
+    val languageSwitchDurationMillis = 500
+
     AnimatedContent(
         targetState = displayedCode,
         transitionSpec = {
-            (fadeIn(tween(durationMillis = 500)) togetherWith fadeOut(tween(durationMillis = 500)))
-                .using(SizeTransform(clip = true, sizeAnimationSpec = { _, _ -> tween(durationMillis = 500) }))
+            (fadeIn(tween(durationMillis = languageSwitchDurationMillis)) togetherWith
+                fadeOut(tween(durationMillis = languageSwitchDurationMillis)))
+                .using(SizeTransform(clip = true, sizeAnimationSpec = { _, _ ->
+                    tween(durationMillis = languageSwitchDurationMillis)
+                }))
         },
     ) { code ->
         val localizedContext = remember(code) { AppSettings.localizedContext(context, code) }
@@ -288,7 +295,6 @@ private fun SettingsScreen(context: Context) {
                         }
                     }
 
-                    // Import config
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -319,7 +325,6 @@ private fun SettingsScreen(context: Context) {
                         }
                     }
 
-                    // 选择语言
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -396,7 +401,6 @@ private fun SettingsScreen(context: Context) {
                         }
                     }
 
-                    // 显示桌面图标
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -427,7 +431,6 @@ private fun SettingsScreen(context: Context) {
                         }
                     }
 
-                    // Scope mode
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -481,7 +484,6 @@ private fun SettingsScreen(context: Context) {
                         body = stringResource(R.string.description_text),
                     )
 
-                    // About
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()

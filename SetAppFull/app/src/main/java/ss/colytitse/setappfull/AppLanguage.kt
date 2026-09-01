@@ -65,9 +65,13 @@ object AppLanguages {
      */
     fun systemLocale(context: Context): Locale {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val manager = context.getSystemService(LocaleManager::class.java)
-            val system = manager?.systemLocales
-            if (system != null && !system.isEmpty) return system[0]
+            try {
+                val manager = context.getSystemService(LocaleManager::class.java)
+                val system = manager?.systemLocales
+                if (system != null && !system.isEmpty) return system[0]
+            } catch (_: AssertionError) {
+                // 预览（layoutlib）不支持 LocaleManager 服务，回退到系统默认 locale。
+            }
         }
         return Resources.getSystem().configuration.locales.get(0) ?: Locale.getDefault()
     }
