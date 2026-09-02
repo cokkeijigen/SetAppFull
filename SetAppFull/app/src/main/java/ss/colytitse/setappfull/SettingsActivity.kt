@@ -49,6 +49,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -82,7 +83,9 @@ import io.github.libxposed.service.XposedService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import ss.colytitse.setappfull.ui.LocalDynamicColor
 import ss.colytitse.setappfull.ui.SetAppFullTheme
+import ss.colytitse.setappfull.ui.appSwitchColors
 
 class SettingsActivity : ComponentActivity() {
 
@@ -94,8 +97,16 @@ class SettingsActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            SetAppFullTheme {
-                SettingsScreen(context = this)
+            var themeMode by remember { mutableStateOf(AppSettings.getTheme(this)) }
+            SetAppFullTheme(themeMode = themeMode) {
+                SettingsScreen(
+                    context = this,
+                    themeMode = themeMode,
+                    onThemeChange = { mode ->
+                        themeMode = mode
+                        AppSettings.setTheme(this, mode)
+                    },
+                )
             }
         }
     }
@@ -103,13 +114,27 @@ class SettingsActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SettingsScreen(context: Context) {
+private fun SettingsScreen(
+    context: Context,
+    themeMode: String,
+    onThemeChange: (String) -> Unit,
+) {
 
     var scopeMode by remember { mutableStateOf(AppSettings.getScopeMode(context)) }
     var showFirstRunHint by remember { mutableStateOf(AppSettings.getHelloWorld(context)) }
     var showIcon by remember { mutableStateOf(AppSettings.getShowLauncherIcon(context)) }
+    var themeExpanded by rememberSaveable { mutableStateOf(false) }
     var languageExpanded by rememberSaveable { mutableStateOf(false) }
     var languageCode by remember { mutableStateOf(AppSettings.getLanguage(context)) }
+
+    val themeOptions = listOf(
+        AppSettings.THEME_SYSTEM to R.string.theme_system,
+        AppSettings.THEME_DARK to R.string.theme_dark,
+        AppSettings.THEME_LIGHT to R.string.theme_light,
+        AppSettings.THEME_SYSTEM_MONET to R.string.theme_system_monet,
+        AppSettings.THEME_DARK_MONET to R.string.theme_dark_monet,
+        AppSettings.THEME_LIGHT_MONET to R.string.theme_light_monet,
+    )
     // 实际驱动界面语言的状态；与 languageCode（选中项）分离。
     // 当实际显示语言未变化时（如「跟随系统」→ 同语言的显式选项），不触发界面刷新动画。
     var displayedCode by remember { mutableStateOf(AppSettings.getLanguage(context)) }
@@ -273,7 +298,7 @@ private fun SettingsScreen(context: Context) {
                                     exportLauncher?.launch(name)
                                 },
                             shape = RoundedCornerShape(10.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                            colors = CardDefaults.cardColors(containerColor = settingsItemContainer()),
                         ) {
                             Row(
                                 modifier = Modifier
@@ -302,9 +327,9 @@ private fun SettingsScreen(context: Context) {
                             .padding(bottom = 16.dp)
                             .clickable {
                                 importLauncher?.launch(arrayOf("text/xml", "application/xml", "*/*"))
-                            },
-                        shape = RoundedCornerShape(10.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                                },
+                                shape = RoundedCornerShape(10.dp),
+                                colors = CardDefaults.cardColors(containerColor = settingsItemContainer()),
                     ) {
                         Row(
                             modifier = Modifier
@@ -331,7 +356,68 @@ private fun SettingsScreen(context: Context) {
                             .fillMaxWidth()
                             .padding(bottom = 16.dp),
                         shape = RoundedCornerShape(10.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        colors = CardDefaults.cardColors(containerColor = settingsItemContainer()),
+                    ) {
+                        Column {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(50.dp)
+                                    .clickable { themeExpanded = !themeExpanded }
+                                    .padding(horizontal = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.theme_text),
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 18.sp,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Icon(
+                                    imageVector = if (themeExpanded) Icons.Filled.KeyboardCapslock else Icons.Filled.UnfoldMore,
+                                    contentDescription = stringResource(R.string.theme_text),
+                                )
+                            }
+                            AnimatedVisibility(
+                                visible = themeExpanded,
+                                enter = expandVertically(tween(durationMillis = 220)) + fadeIn(tween(durationMillis = 220)),
+                                exit = shrinkVertically(tween(durationMillis = 200)) + fadeOut(tween(durationMillis = 180)),
+                            ) {
+                                Column {
+                                    HorizontalDivider()
+                                    themeOptions.forEach { (code, labelRes) ->
+                                        val selected = themeMode == code
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable { onThemeChange(code) }
+                                                .padding(horizontal = 10.dp, vertical = 12.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            RadioButton(
+                                                selected = selected,
+                                                onClick = null,
+                                                modifier = Modifier.scale(0.9f),
+                                                colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF3D5F90)),
+                                            )
+                                            Text(
+                                                text = stringResource(labelRes),
+                                                fontSize = 16.sp,
+                                                modifier = Modifier.padding(start = 12.dp),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = CardDefaults.cardColors(containerColor = settingsItemContainer()),
                     ) {
                         Column {
                             Row(
@@ -389,6 +475,7 @@ private fun SettingsScreen(context: Context) {
                                                 selected = selected,
                                                 onClick = null,
                                                 modifier = Modifier.scale(0.9f),
+                                                colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF3D5F90)),
                                             )
                                             Text(
                                                 text = stringResource(lang.labelRes),
@@ -411,7 +498,7 @@ private fun SettingsScreen(context: Context) {
                             .fillMaxWidth()
                             .padding(bottom = 16.dp),
                         shape = RoundedCornerShape(10.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        colors = CardDefaults.cardColors(containerColor = settingsItemContainer()),
                     ) {
                         Row(
                             modifier = Modifier
@@ -432,6 +519,7 @@ private fun SettingsScreen(context: Context) {
                                     showIcon = it
                                     AppSettings.setShowLauncherIcon(context, it)
                                 },
+                                colors = appSwitchColors(),
                             )
                         }
                     }
@@ -445,7 +533,7 @@ private fun SettingsScreen(context: Context) {
                             .fillMaxWidth()
                             .padding(bottom = 16.dp),
                         shape = RoundedCornerShape(10.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        colors = CardDefaults.cardColors(containerColor = settingsItemContainer()),
                     ) {
                         Column {
                             Row(
@@ -467,6 +555,7 @@ private fun SettingsScreen(context: Context) {
                                         scopeMode = it
                                         AppSettings.setScopeMode(context, it)
                                     },
+                                    colors = appSwitchColors(),
                                 )
                             }
                             Text(
@@ -495,10 +584,10 @@ private fun SettingsScreen(context: Context) {
 
                     Card(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
+                            .fillMaxWidth(),
+//                            .padding(bottom = 16.dp),
                         shape = RoundedCornerShape(10.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        colors = CardDefaults.cardColors(containerColor = settingsItemContainer()),
                     ) {
                         Column {
                             Text(
@@ -511,7 +600,7 @@ private fun SettingsScreen(context: Context) {
                                     .padding(horizontal = 10.dp, vertical = 10.dp),
                             )
                             Text(
-                                text = "- ${stringResource(R.string.app_name)} -",
+                                text = "- ${stringResource(R.string.app_name2)} -",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 20.sp,
                                 textAlign = TextAlign.Center,
@@ -593,7 +682,7 @@ internal fun SectionCard(header: String, body: String) {
             .fillMaxWidth()
             .padding(bottom = 16.dp),
         shape = RoundedCornerShape(10.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        colors = CardDefaults.cardColors(containerColor = settingsItemContainer()),
     ) {
         Column {
             Text(
@@ -617,10 +706,23 @@ internal fun SectionCard(header: String, body: String) {
     }
 }
 
+/** 设置页卡片背景色：普通配色用 surfaceVariant，动态取色（Monet）时对齐应用列表未选中项背景。 */
+@Composable
+private fun settingsItemContainer(): Color =
+    if (LocalDynamicColor.current) {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.26f)
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+
 @Preview(showBackground = true, widthDp = 500, heightDp = 1600)
 @Composable
 private fun SettingsScreenPreview() {
     SetAppFullTheme {
-        SettingsScreen(context = LocalContext.current)
+        SettingsScreen(
+            context = LocalContext.current,
+            themeMode = AppSettings.getTheme(LocalContext.current),
+            onThemeChange = {},
+        )
     }
 }

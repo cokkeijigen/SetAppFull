@@ -39,6 +39,7 @@ object AppSettings {
     private const val KEY_HELLO_WORLD = "hello_world"
     private const val KEY_SHOW_ICON = "show_launcher_icon"
     private const val KEY_LANGUAGE = "app_language"
+    private const val KEY_THEME = "app_theme"
     private const val LAUNCHER_ALIAS = "ss.colytitse.setappfull.MainActivityLauncher"
 
     /** The active preferences: remote (LSPosed) when available, otherwise local. */
@@ -174,6 +175,24 @@ object AppSettings {
                 LocaleList.forLanguageTags(getLanguage(context))
             }
         }
+    }
+
+    // ---------------------------------------------------------------------------------- theme
+
+    const val THEME_SYSTEM = "system"
+    const val THEME_DARK = "dark"
+    const val THEME_LIGHT = "light"
+    const val THEME_SYSTEM_MONET = "system_monet"
+    const val THEME_DARK_MONET = "dark_monet"
+    const val THEME_LIGHT_MONET = "light_monet"
+
+    fun getTheme(context: Context): String =
+        context.getSharedPreferences(CONFIG_NAME, Context.MODE_PRIVATE)
+            .getString(KEY_THEME, THEME_SYSTEM_MONET) ?: THEME_SYSTEM_MONET
+
+    fun setTheme(context: Context, mode: String) {
+        context.getSharedPreferences(CONFIG_NAME, Context.MODE_PRIVATE)
+            .edit { putString(KEY_THEME, mode) }
     }
 
     /** 根据指定语言 code 创建带对应 locale 的 context（Compose 层即时切换语言用）。 */

@@ -1,5 +1,6 @@
 package ss.colytitse.setappfull
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -17,6 +18,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,9 +29,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -53,7 +57,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -69,14 +72,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.libxposed.service.XposedService
 import kotlinx.coroutines.launch
+import ss.colytitse.setappfull.ui.LocalDynamicColor
 import ss.colytitse.setappfull.ui.SetAppFullTheme
+import ss.colytitse.setappfull.ui.appSwitchColors
 
 class MainActivity : ComponentActivity() {
 
@@ -84,6 +91,8 @@ class MainActivity : ComponentActivity() {
     private var lastLanguageKey: String? = null
     // 语言变化后自增，通知界面重算应用名
     val languageRevision = mutableIntStateOf(0)
+    // 主题模式（Activity 级 state，供 onResume 刷新）
+    val themeModeState = mutableStateOf(AppSettings.THEME_SYSTEM_MONET)
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(AppSettings.wrapLocale(newBase))
@@ -103,6 +112,7 @@ class MainActivity : ComponentActivity() {
             return
         }
         lastLanguageKey = currentKey
+        themeModeState.value = AppSettings.getTheme(this)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -122,9 +132,15 @@ class MainActivity : ComponentActivity() {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
 
+        themeModeState.value = AppSettings.getTheme(this)
         setContent {
-            SetAppFullTheme {
-                MainScreen(activity = this, appInfoManager = appInfoManager)
+            val themeMode by themeModeState
+            SetAppFullTheme(themeMode = themeMode) {
+                MainScreen(
+                    activity = this,
+                    appInfoManager = appInfoManager,
+                    refreshTheme = { themeModeState.value = AppSettings.getTheme(this) },
+                )
             }
         }
     }
@@ -132,8 +148,11 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MainScreen(activity: MainActivity, appInfoManager: AppInfoManager) {
-    val context = activity
+private fun MainScreen(
+    activity: MainActivity,
+    appInfoManager: AppInfoManager,
+    refreshTheme: () -> Unit = {},
+) {
 
     var revision by remember { mutableIntStateOf(0) }       // 行内开关状态刷新（不触发重排）
     var listRevision by remember { mutableIntStateOf(0) }   // 列表数据 / 排序刷新
@@ -150,13 +169,14 @@ private fun MainScreen(activity: MainActivity, appInfoManager: AppInfoManager) {
     ) {
         listRevision++
         revision++
+        refreshTheme()
     }
 
     // 页序：0 = 用户应用（第一位），1 = 系统应用
     val PAGE_USER = 0
     val PAGE_SYSTEM = 1
     val pagerState = rememberPagerState(
-        initialPage = if (AppSettings.getSwitchListType(context) == AppSettings.USER_VIEW) {
+        initialPage = if (AppSettings.getSwitchListType(activity) == AppSettings.USER_VIEW) {
             PAGE_USER
         } else {
             PAGE_SYSTEM
@@ -168,7 +188,7 @@ private fun MainScreen(activity: MainActivity, appInfoManager: AppInfoManager) {
     // 页面切换后持久化视图类型并刷新排序
     LaunchedEffect(listType) {
         AppSettings.saveSwitchList(
-            context,
+            activity,
             if (listType == PAGE_USER) AppSettings.USER_VIEW else AppSettings.SYSTEM_VIEW,
         )
         listRevision++
@@ -186,11 +206,11 @@ private fun MainScreen(activity: MainActivity, appInfoManager: AppInfoManager) {
         onDispose { App.removeServiceStateListener(listener) }
     }
 
-    val scopeMode = AppSettings.getScopeMode(context)
+    val scopeMode = AppSettings.getScopeMode(activity)
 
     // 按搜索词过滤，已设置模式的应用排前面（不依赖 revision，行内开关不触发重排）
     fun sortApps(list: List<AppItem>): List<AppItem> = list.sortedBy {
-        if (AppSettings.getSetMode(context, it.packageName) == AppSettings.NO_SET) 1 else 0
+        if (AppSettings.getSetMode(activity, it.packageName) == AppSettings.NO_SET) 1 else 0
     }
 
     // 语言变化后让列表重算
@@ -211,7 +231,7 @@ private fun MainScreen(activity: MainActivity, appInfoManager: AppInfoManager) {
     )
 
     fun toggleMode(item: AppItem) {
-        val current = AppSettings.getSetMode(context, item.packageName)
+        val current = AppSettings.getSetMode(activity, item.packageName)
         val checked = current != AppSettings.NO_SET
         val next = when {
             !checked && !scopeMode -> AppSettings.MODE_1
@@ -219,9 +239,9 @@ private fun MainScreen(activity: MainActivity, appInfoManager: AppInfoManager) {
             else -> AppSettings.NO_SET
         }
         when (next) {
-            AppSettings.MODE_1 -> AppSettings.saveAppMode(context, item.packageName)
-            AppSettings.MODE_2 -> AppSettings.saveSystemMode(context, item.packageName)
-            else -> AppSettings.deleteSelection(context, item.packageName)
+            AppSettings.MODE_1 -> AppSettings.saveAppMode(activity, item.packageName)
+            AppSettings.MODE_2 -> AppSettings.saveSystemMode(activity, item.packageName)
+            else -> AppSettings.deleteSelection(activity, item.packageName)
         }
         revision++
     }
@@ -247,7 +267,7 @@ private fun MainScreen(activity: MainActivity, appInfoManager: AppInfoManager) {
                         } else {
                             appInfoManager.systemAppList().map { it.packageName }.toSet()
                         }
-                        AppSettings.clearSelections(context, packages)
+                        AppSettings.clearSelections(activity, packages)
                         listRevision++
                         revision++
                         showClearConfirm = false
@@ -266,64 +286,26 @@ private fun MainScreen(activity: MainActivity, appInfoManager: AppInfoManager) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                ),
-                title = {
-                    Column {
-                        Text(
-                            text = stringResource(R.string.app_name),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                            modifier = Modifier.clickable { refresh() },
-                        )
-                        Text(
-                            text = "Version：${BuildConfig.VERSION_NAME} ($listTypeLabel)",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+            MainTopBar(
+                searchVisible = searchVisible,
+                listTypeLabel = listTypeLabel,
+                onRefresh = { refresh() },
+                onClearAll = { showClearConfirm = true },
+                onToggleSearch = {
+                    if (searchVisible) {
+                        searchVisible = false
+                        searchQuery = ""
+                    } else {
+                        searchVisible = true
                     }
                 },
-                actions = {
-                    IconButton(onClick = { showClearConfirm = true }) {
-                        Icon(
-                            imageVector = Icons.Filled.Block,
-                            contentDescription = stringResource(R.string.clear_all),
-                        )
+                onSwapList = {
+                    scope.launch {
+                        pagerState.animateScrollToPage(1 - pagerState.currentPage)
                     }
-                    IconButton(onClick = {
-                        if (searchVisible) {
-                            searchVisible = false
-                            searchQuery = ""
-                        } else {
-                            searchVisible = true
-                        }
-                    }) {
-                        Icon(
-                            imageVector = if (searchVisible) Icons.Filled.Close else Icons.Filled.Search,
-                            contentDescription = stringResource(R.string.search_text),
-                        )
-                    }
-                    IconButton(onClick = {
-                        scope.launch {
-                            pagerState.animateScrollToPage(1 - pagerState.currentPage)
-                        }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.SwapHoriz,
-                            contentDescription = listTypeLabel,
-                        )
-                    }
-                    IconButton(onClick = {
-                        settingsLauncher.launch(Intent(context, SettingsActivity::class.java))
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.Settings,
-                            contentDescription = stringResource(R.string.settings_text),
-                        )
-                    }
+                },
+                onOpenSettings = {
+                    settingsLauncher.launch(Intent(activity, SettingsActivity::class.java))
                 },
             )
         },
@@ -385,7 +367,7 @@ private fun MainScreen(activity: MainActivity, appInfoManager: AppInfoManager) {
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
                             items(list, key = { it.packageName }) { item ->
-                                val mode = remember(revision) { AppSettings.getSetMode(context, item.packageName) }
+                                val mode = remember(revision) { AppSettings.getSetMode(activity, item.packageName) }
                                 AppRow(
                                     item = item,
                                     mode = mode,
@@ -402,16 +384,100 @@ private fun MainScreen(activity: MainActivity, appInfoManager: AppInfoManager) {
 }
 
 @Composable
+internal fun MainTopBar(
+    searchVisible: Boolean,
+    listTypeLabel: String,
+    onRefresh: () -> Unit,
+    onClearAll: () -> Unit,
+    onToggleSearch: () -> Unit,
+    onSwapList: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .windowInsetsPadding(TopAppBarDefaults.windowInsets)
+            .background(MaterialTheme.colorScheme.surface),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+            ) {
+                Text(
+                    text = stringResource(R.string.app_name2),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    modifier = Modifier.clickable { onRefresh() },
+                )
+                Text(
+                    text = "${stringResource(R.string.version_text)}：${BuildConfig.VERSION_NAME}",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Column(
+                horizontalAlignment = Alignment.End,
+            ) {
+                Row {
+                    IconButton(onClick = { onClearAll() }) {
+                        Icon(
+                            imageVector = Icons.Filled.Block,
+                            contentDescription = stringResource(R.string.clear_all),
+                        )
+                    }
+                    IconButton(onClick = { onToggleSearch() }) {
+                        Icon(
+                            imageVector = if (searchVisible) Icons.Filled.Close else Icons.Filled.Search,
+                            contentDescription = stringResource(R.string.search_text),
+                        )
+                    }
+                    IconButton(onClick = { onSwapList() }) {
+                        Icon(
+                            imageVector = Icons.Filled.SwapHoriz,
+                            contentDescription = listTypeLabel,
+                        )
+                    }
+                    IconButton(onClick = { onOpenSettings() }) {
+                        Icon(
+                            imageVector = Icons.Filled.Settings,
+                            contentDescription = stringResource(R.string.settings_text),
+                        )
+                    }
+                }
+                Text(
+                    text = "($listTypeLabel)",
+                    fontSize = 12.sp,
+                    lineHeight = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .padding(end = 12.dp)
+                        .offset(y = (-5).dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
 internal fun AppRow(
     item: AppItem,
     mode: Int,
     scopeMode: Boolean,
     onClick: () -> Unit,
 ) {
+    val dynamic = LocalDynamicColor.current
     val background = when (mode) {
-        AppSettings.MODE_1 -> Color(0x43009AFF)
-        AppSettings.MODE_2 -> Color(0x4500BFA5)
-        else -> MaterialTheme.colorScheme.surfaceVariant
+        AppSettings.MODE_1, AppSettings.MODE_2 ->
+            if (dynamic) MaterialTheme.colorScheme.surfaceVariant
+            else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.26f)
+        else ->
+            if (dynamic) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.26f)
+            else MaterialTheme.colorScheme.surfaceVariant
     }
 
     Surface(
@@ -479,6 +545,7 @@ internal fun AppRow(
                 Switch(
                     checked = mode != AppSettings.NO_SET,
                     onCheckedChange = { onClick() },
+                    colors = appSwitchColors(),
                 )
                 if (!scopeMode) {
                     val label = when (mode) {
@@ -491,6 +558,58 @@ internal fun AppRow(
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFF84D4D),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@SuppressLint("LocalContextGetResourceValueCall")
+@Preview(showBackground = true, widthDp = 400, heightDp = 900)
+@Composable
+private fun AppListPreview() {
+    val context = LocalContext.current
+    val demoIcon = remember { context.getDrawable(R.mipmap.ic_launcher_round) }
+    val fakeApps = listOf(
+        AppItem("com.example.camera", "Camera", "14.0.1", 14000100L, demoIcon),
+        AppItem("com.example.browser", "Browser", "10.2.3", 10020300L, demoIcon),
+        AppItem("com.example.music", "Music", "8.4.0", 8040000L, demoIcon),
+        AppItem("com.example.gallery", "Gallery", "9.1.0", 9010000L, demoIcon),
+    )
+    val previewModes = mapOf(
+        "com.example.camera" to AppSettings.NO_SET,
+        "com.example.browser" to AppSettings.MODE_1,
+        "com.example.music" to AppSettings.MODE_2,
+        "com.example.gallery" to AppSettings.NO_SET,
+    )
+    SetAppFullTheme {
+        Scaffold(
+            topBar = {
+                MainTopBar(
+                    searchVisible = false,
+                    listTypeLabel = stringResource(R.string.list_user),
+                    onRefresh = {},
+                    onClearAll = {},
+                    onToggleSearch = {},
+                    onSwapList = {},
+                    onOpenSettings = {},
+                )
+            },
+        ) { padding ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(start = 15.dp, end = 15.dp, top = 10.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                items(fakeApps, key = { it.packageName }) { item ->
+                    AppRow(
+                        item = item,
+                        mode = previewModes[item.packageName] ?: AppSettings.NO_SET,
+                        scopeMode = false,
+                        onClick = {},
                     )
                 }
             }

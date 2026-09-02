@@ -1,5 +1,6 @@
 <resources>
-    <string name="app_name">SetAppFull</string>
+    <string name="app_name">AppFull</string>
+    <string name="app_name2">SetAppFull</string>
     <string name="xposeddescription">Set app to full screen run _(:з」∠)_.</string>
     <string name="list_system">SystemApp</string>
     <string name="list_user">UserApp</string>
@@ -14,6 +15,7 @@
     <string name="language_text">Language</string>
     <string name="language_system">Follow system</string>
     <string name="language_english">English</string>
+    <string name="version_text">Version</string>
     <string name="language_chinese">简体中文</string>
     <string name="clear_all">Clear all selections</string>
     <string name="clear_all_title">Clear all selections</string>
@@ -40,4 +42,11 @@
     <string name="export_failed">Export failed.</string>
     <string name="import_success">Config imported.</string>
     <string name="import_failed">Import failed.</string>
+    <string name="theme_text">Theme</string>
+    <string name="theme_system">Follow system</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_system_monet">Follow system (Monet)</string>
+    <string name="theme_dark_monet">Dark (Monet)</string>
+    <string name="theme_light_monet">Light (Monet)</string>
 </resources>
