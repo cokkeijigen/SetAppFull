@@ -2,6 +2,7 @@ package ss.colytitse.setappfull
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -81,6 +82,8 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var appInfoManager: AppInfoManager
     private var lastLanguageKey: String? = null
+    // 语言变化后自增，通知界面重算应用名
+    val languageRevision = mutableIntStateOf(0)
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(AppSettings.wrapLocale(newBase))
@@ -88,18 +91,25 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        // 按「实际显示语言」归一化比较，避免「跟随系统 → 同语言显式选项」这类无实际变化的切换触发重建闪烁。
+        // 归一化比较，避免无实际变化的切换触发重建闪烁
         val currentKey = AppLanguages.effectiveLanguageKey(AppSettings.getLanguage(this), this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // API 33+ 由 LocaleManager 驱动，返回时同步一次 applicationLocales（幂等）。
+            // API 33+：设置 applicationLocales 后由 onConfigurationChanged 重新扫描
             AppSettings.applyLanguage(this)
         } else if (lastLanguageKey != null && lastLanguageKey != currentKey) {
-            // API 33 以下：返回时语言有变则重建一次主界面。
+            // API 33 以下：语言有变则重建
             lastLanguageKey = currentKey
             recreate()
             return
         }
         lastLanguageKey = currentKey
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // 语言生效后重新扫描应用名
+        appInfoManager.update()
+        languageRevision.value++
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -134,7 +144,7 @@ private fun MainScreen(activity: MainActivity, appInfoManager: AppInfoManager) {
 
     val scope = rememberCoroutineScope()
 
-    // 从设置页返回后总是刷新：可能修改了作用域模式、导入了配置，或勾选状态需要重排
+    // 从设置页返回后总是刷新（可能改了作用域模式、导入配置或勾选状态）
     val settingsLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) {
@@ -155,7 +165,7 @@ private fun MainScreen(activity: MainActivity, appInfoManager: AppInfoManager) {
     )
     val listType = pagerState.currentPage
 
-    // 页面变化（滑动或按钮动画）后持久化当前视图类型，并刷新列表排序
+    // 页面切换后持久化视图类型并刷新排序
     LaunchedEffect(listType) {
         AppSettings.saveSwitchList(
             context,
@@ -178,16 +188,18 @@ private fun MainScreen(activity: MainActivity, appInfoManager: AppInfoManager) {
 
     val scopeMode = AppSettings.getScopeMode(context)
 
-    // 每个页面各自一份列表：按搜索词过滤，已设置模式的应用排前面。不依赖 `revision`，
-    // 因此行内开关切换不会触发重新过滤/排序。
+    // 按搜索词过滤，已设置模式的应用排前面（不依赖 revision，行内开关不触发重排）
     fun sortApps(list: List<AppItem>): List<AppItem> = list.sortedBy {
         if (AppSettings.getSetMode(context, it.packageName) == AppSettings.NO_SET) 1 else 0
     }
 
-    val systemList = remember(searchQuery, listRevision) {
+    // 语言变化后让列表重算
+    val langRev = activity.languageRevision.value
+
+    val systemList = remember(searchQuery, listRevision, langRev) {
         sortApps(appInfoManager.filter(appInfoManager.systemAppList(), searchQuery))
     }
-    val userList = remember(searchQuery, listRevision) {
+    val userList = remember(searchQuery, listRevision, langRev) {
         sortApps(appInfoManager.filter(appInfoManager.userAppList(), searchQuery))
     }
 
@@ -347,8 +359,7 @@ private fun MainScreen(activity: MainActivity, appInfoManager: AppInfoManager) {
                 ) { page ->
                     val list = if (page == PAGE_USER) userList else systemList
                     val listState = if (page == PAGE_USER) userListState else systemListState
-                    // 列表数据变化（刷新/清空）后回到顶部。放在此处（而非 refresh()）确保
-                    // 在重排后的新数据上执行，避免 LazyColumn 用 item key 锚定把位置拉回旧顶部。
+                    // 数据变化后回到顶部（在此执行而非 refresh()，避免 item key 锚定拉回旧位置）
                     LaunchedEffect(listRevision) {
                         if (list.isNotEmpty()) {
                             listState.scrollToItem(0)
@@ -400,7 +411,7 @@ internal fun AppRow(
     val background = when (mode) {
         AppSettings.MODE_1 -> Color(0x43009AFF)
         AppSettings.MODE_2 -> Color(0x4500BFA5)
-        else -> Color(0x146B8BFF)
+        else -> MaterialTheme.colorScheme.surfaceVariant
     }
 
     Surface(

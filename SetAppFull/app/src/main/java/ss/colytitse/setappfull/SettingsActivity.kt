@@ -66,6 +66,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -402,6 +403,10 @@ private fun SettingsScreen(context: Context) {
                     }
 
                     Card(
+                        onClick = {
+                            showIcon = !showIcon
+                            AppSettings.setShowLauncherIcon(context, showIcon)
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 16.dp),
@@ -432,6 +437,10 @@ private fun SettingsScreen(context: Context) {
                     }
 
                     Card(
+                        onClick = {
+                            scopeMode = !scopeMode
+                            AppSettings.setScopeMode(context, scopeMode)
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 16.dp),
@@ -608,7 +617,7 @@ internal fun SectionCard(header: String, body: String) {
     }
 }
 
-@Preview(showBackground = true, widthDp = 500, heightDp = 1500)
+@Preview(showBackground = true, widthDp = 500, heightDp = 1600)
 @Composable
 private fun SettingsScreenPreview() {
     SetAppFullTheme {
