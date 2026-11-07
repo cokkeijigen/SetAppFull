@@ -1,0 +1,51 @@
+*.iml
+.gradle
+.fetch
+.opensquilla
+.workbuddy
+.idea
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+app/release
+
+# === 补充：原先遗漏的忽略项 ===
+
+# Kotlin / Gradle 构建缓存
+.kotlin/
+
+# 签名密钥（绝不可提交）
+*.keystore
+*.jks
+
+# 构建产物（APK / AAB / AAR）
+*.apk
+*.aab
+*.aar
+*.ap_
+
+# 堆 / 性能分析文件
+*.hprof
+*.prof
+
+# 其它日志
+*.log
+
+# 旧式构建目录
+bin/
+gen/
+out/
+
+# 根目录孤立 / 生成产物
+material-icons-extended*.csv
+opensquilla-chat-*.md
